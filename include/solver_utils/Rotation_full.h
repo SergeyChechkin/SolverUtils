@@ -1,7 +1,10 @@
+/// BSD 3-Clause License
+/// Copyright (c) 2023, Sergey Chechkin
+/// Autor: Sergey Chechkin, schechkin@gmail.com 
+
 #pragma once
 
 #include "Functions.h"
-
 #include <Eigen/Core>
 
 namespace solver::rotation {
@@ -26,7 +29,7 @@ struct AngleAxis {
     T cos_theta_;
 };
 
-// so3 rotation 
+// so3 rotation
 template<typename T>
 class Rotation_full { 
 public:

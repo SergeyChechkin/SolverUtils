@@ -1,3 +1,7 @@
+/// BSD 3-Clause License
+/// Copyright (c) 2023, Sergey Chechkin
+/// Autor: Sergey Chechkin, schechkin@gmail.com 
+
 #pragma once
 
 #include "Rotation_min.h"
@@ -32,7 +36,7 @@ public:
     }
 
     // partial derivative by rotation
-    static Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector<T, 3>& angle_axis, const Eigen::Vector<T, 3>& pnt) {    
+    static Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {    
         using std::hypot;
         using std::sin;
         using std::cos;
@@ -54,7 +58,7 @@ public:
     }
 
     // partial derivative by point
-    static Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector<T, 3>& angle_axis, const Eigen::Vector<T, 3>& pnt) {    
+    static Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {    
         using std::hypot;
         using std::sin;
         using std::cos;

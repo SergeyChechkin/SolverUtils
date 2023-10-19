@@ -1,2 +1,2 @@
-#include "solver_utils/Rotation_min.h"
-#include "solver_utils/Rotation_full.h"
+#include "solver_utils/Rotation.h"
+#include "solver_utils/Transformation.h"
