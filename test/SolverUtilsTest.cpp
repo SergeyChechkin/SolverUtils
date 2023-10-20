@@ -1,5 +1,6 @@
 #include "solver_utils/Rotation.h"
 #include "solver_utils/Transformation.h"
+#include "solver_utils/PerspectiveProjection.h"
 
 #include <ceres/jet.h>
 #include <ceres/rotation.h>
@@ -9,6 +10,7 @@
 
 using namespace solver::rotation;
 using namespace solver::transformation;
+using namespace solver::projection;
 
 TEST(SolverUtils, RotationMinTest) { 
 
@@ -109,9 +111,9 @@ TEST(SolverUtils, TransformationTest) {
     const Eigen::Vector<double, 6> pose = {M_PI / 5, 0, 0, 1, 2, 3};
     const Eigen::Vector3d pt = {1, 1, 1};
     
-    auto f = Transformation<double>::f(pose, pt);
-    auto df_dps = Transformation<double>::df_dps(pose, pt);
-    auto df_dpt = Transformation<double>::df_dpt(pose, pt);
+    auto f = IsometricTransformation<double>::f(pose, pt);
+    auto df_dps = IsometricTransformation<double>::df_dps(pose, pt);
+    auto df_dpt = IsometricTransformation<double>::df_dpt(pose, pt);
 
     // using ceres::Jet for comparosing 
     using JetT = ceres::Jet<double, 9>;
@@ -124,7 +126,7 @@ TEST(SolverUtils, TransformationTest) {
         pt_j[i] = JetT(pt[i], i + 6);
     }
 
-    Eigen::Vector3<JetT> f_j = Transformation<JetT>::f(pose_j, pt_j);
+    Eigen::Vector3<JetT> f_j = IsometricTransformation<JetT>::f(pose_j, pt_j);
 
     ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
     ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
@@ -171,8 +173,8 @@ TEST(SolverUtils, ZeroTransformationTest) {
     const Eigen::Vector<double, 6> pose = {0, 0, 0, 0, 0, 0};
     const Eigen::Vector3d pt = {1, 2, 3};
     
-    auto f = Transformation<double>::f(pose, pt);
-    auto df_dps = Transformation<double>::df_dps_zero(pt);
+    auto f = IsometricTransformation<double>::f(pose, pt);
+    auto df_dps = IsometricTransformation<double>::df_dps_zero(pt);
 
     // using ceres::Jet for comparosing 
     using JetT = ceres::Jet<double, 9>;
@@ -185,7 +187,7 @@ TEST(SolverUtils, ZeroTransformationTest) {
         pt_j[i] = JetT(pt[i], i + 6);
     }
 
-    Eigen::Vector3<JetT> f_j = Transformation<JetT>::f(pose_j, pt_j);
+    Eigen::Vector3<JetT> f_j = IsometricTransformation<JetT>::f(pose_j, pt_j);
 
     ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
     ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
@@ -214,6 +216,81 @@ TEST(SolverUtils, ZeroTransformationTest) {
     ASSERT_NEAR(f_j[0].v[5], df_dps(0, 5), FLT_EPSILON);
     ASSERT_NEAR(f_j[1].v[5], df_dps(1, 5), FLT_EPSILON);
     ASSERT_NEAR(f_j[2].v[5], df_dps(2, 5), FLT_EPSILON);
+}
+
+
+TEST(SolverUtils, PerspectiveProjectionTest) {
+    const Eigen::Vector3d pt = {1, 2, 3};
+    const auto f = PerspectiveProjection<double>::f(pt);
+    const auto df_dpt = PerspectiveProjection<double>::df_dpt(pt); 
+
+    //std::cout << f.transpose() << std::endl;
+    //std::cout << df_dpt << std::endl;
+
+
+    // using ceres::Jet for comparosing 
+    using JetT = ceres::Jet<double, 3>;
+    Eigen::Vector3<JetT> pt_j;
+    for(int i = 0; i < 3; ++i)  {
+        pt_j[i] = JetT(pt[i], i);
+    }
+
+    Eigen::Vector2<JetT> f_j = PerspectiveProjection<JetT>::f(pt_j);
+
+    //std::cout << f_j << std::endl;
+
+    ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[0], df_dpt(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[0], df_dpt(1, 0), FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[1], df_dpt(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[1], df_dpt(1, 1), FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[2], df_dpt(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[2], df_dpt(1, 2), FLT_EPSILON);
+}
+
+TEST(SolverUtils, PerspectiveProjectionCamTest) {
+    const Eigen::Vector3d pt = {1, 2, 3};
+    const Eigen::Vector3d cam = {450, 320, 240};    
+    const auto f = PerspectiveProjection<double>::f(cam, pt);
+    const auto df_cam = PerspectiveProjection<double>::df_dcm(cam, pt);
+    const auto df_dpt = PerspectiveProjection<double>::df_dpt(cam, pt); 
+
+    using JetT = ceres::Jet<double, 6>;
+    Eigen::Vector3<JetT> cam_j;
+    for(int i = 0; i < 3; ++i)  {
+        cam_j[i] = JetT(cam[i], i);
+    }
+    Eigen::Vector3<JetT> pt_j;
+    for(int i = 0; i < 3; ++i)  {
+        pt_j[i] = JetT(pt[i], i+3);
+    }
+
+    Eigen::Vector2<JetT> f_j = PerspectiveProjection<JetT>::f(cam_j, pt_j);
+
+    ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[3], df_dpt(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[3], df_dpt(1, 0), FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[4], df_dpt(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[4], df_dpt(1, 1), FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[5], df_dpt(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[5], df_dpt(1, 2), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[0], df_cam(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[0], df_cam(1, 0), FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[1], df_cam(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[1], df_cam(1, 1), FLT_EPSILON);
+    
+    ASSERT_NEAR(f_j[0].v[2], df_cam(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[2], df_cam(1, 2), FLT_EPSILON);
 }
 
 int main(int argc, char **argv) {

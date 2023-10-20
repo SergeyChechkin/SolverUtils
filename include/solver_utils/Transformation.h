@@ -9,7 +9,7 @@
 namespace solver::transformation {
 
 template<typename T>
-class Transformation {
+class IsometricTransformation {
 public:
     static Eigen::Vector3<T> f(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) { 
         Eigen::Vector3<T> result = rotation::Rotation<T>::f(pose.head(3), pnt);
