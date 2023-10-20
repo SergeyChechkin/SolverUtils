@@ -293,6 +293,57 @@ TEST(SolverUtils, PerspectiveProjectionCamTest) {
     ASSERT_NEAR(f_j[1].v[2], df_cam(1, 2), FLT_EPSILON);
 }
 
+TEST(SolverUtils, PerspectiveRerojectionTest) {
+    const Eigen::Vector2d pt = {2, 3};
+    double inv_depth = 0.2;
+    const Eigen::Vector3d cam = {450, 320, 240};    
+    const auto f = PerspectiveReprojectionUnitPlane<double>::f(cam, pt, inv_depth);
+    const auto df_dpt = PerspectiveReprojectionUnitPlane<double>::df_dpt(cam, pt, inv_depth); 
+    const auto df_did = PerspectiveReprojectionUnitPlane<double>::df_did(cam, pt, inv_depth); 
+    const auto df_dcm = PerspectiveReprojectionUnitPlane<double>::df_dcm(cam, pt, inv_depth); 
+
+    using JetT = ceres::Jet<double, 6>;
+    Eigen::Vector3<JetT> cam_j;
+    for(int i = 0; i < 3; ++i)  {
+        cam_j[i] = JetT(cam[i], i);
+    }
+    Eigen::Vector2<JetT> pt_j;
+    for(int i = 0; i < 2; ++i)  {
+        pt_j[i] = JetT(pt[i], i + 3);
+    }
+    JetT inv_depth_j(inv_depth, 5); 
+
+    auto f_j = PerspectiveReprojectionUnitPlane<JetT>::f(cam_j, pt_j, inv_depth_j);
+
+    ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].a, f[2], FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[0], df_dcm(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[0], df_dcm(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[0], df_dcm(2, 0), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[1], df_dcm(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[1], df_dcm(1, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[1], df_dcm(2, 1), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[2], df_dcm(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[2], df_dcm(1, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[2], df_dcm(2, 2), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[3], df_dpt(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[3], df_dpt(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[3], df_dpt(2, 0), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[4], df_dpt(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[4], df_dpt(1, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[4], df_dpt(2, 1), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[5], df_did(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[5], df_did(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[5], df_did(2, 0), FLT_EPSILON);
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

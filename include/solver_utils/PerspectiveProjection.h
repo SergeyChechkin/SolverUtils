@@ -14,6 +14,7 @@ public:
         return {pnt[0] / pnt[2], pnt[1] / pnt[2]};
     }
 
+    // Projection derivative by point
     static Eigen::Matrix<T, 2, 3> df_dpt(const Eigen::Vector3<T>& pnt) {
         static const T zero = T(0.0);
         const T inv_z = T(1.0) / pnt[2];
@@ -33,6 +34,7 @@ public:
         return {cam[0] * pnt[0] / pnt[2] + cam[1], cam[0] * pnt[1] / pnt[2] + cam[2]};
     }
 
+    // Projection derivative by point
     static Eigen::Matrix<T, 2, 3> df_dpt(const Eigen::Vector3<T>& cam, const Eigen::Vector3<T>& pnt) {
         static const T zero = T(0.0);
         const T inv_z = T(1.0) / pnt[2];
@@ -47,6 +49,7 @@ public:
         return result;
     }
 
+    // Projection derivative by camera parameters
     static Eigen::Matrix<T, 2, 3> df_dcm(const Eigen::Vector3<T>& cam, const Eigen::Vector3<T>& pnt) {
         static const T zero = T(0.0);
         static const T one = T(1.0);
@@ -61,10 +64,76 @@ public:
     }
 };
 
+// Perspective reprojection
 template<typename T>
-class PerspectiveReprojectionPlane {
+class PerspectiveReprojectionUnitPlane {
 public:
+// reprojection from unit plane 
+static Eigen::Vector3<T> f(const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        const T depth = T(1.0) / inv_depth;
+        return {depth * pnt[0], depth * pnt[1], depth};
+    }
 
+// reprojection derivatives by point
+static Eigen::Matrix<T, 3, 2> df_dpt(const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        Eigen::Matrix<T, 3, 2> result = Eigen::Matrix<T, 3, 2>::Zero();
+        const T depth = T(1.0) / inv_depth;
+        
+        result(0, 0) = depth;
+        result(1, 1) = depth;
+
+        return result;
+    }
+
+// reprojection derivatives by inverse depth
+static Eigen::Matrix<T, 3, 1> df_did(const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        const T did = -T(1.0) / (inv_depth * inv_depth);
+        return {did * pnt[0], did * pnt[1], did};
+    }
+
+// reprojection from image
+static Eigen::Vector3<T> f(const Eigen::Vector3<T>& cam, const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        const T depth = T(1.0) / inv_depth;
+        const T inv_f = T(1.0) / cam[0];
+        return {depth * inv_f * (pnt[0] - cam[1]), depth * inv_f * (pnt[1] - cam[2]), depth};
+    }
+
+// reprojection derivatives by camera parameters
+static Eigen::Matrix<T, 3, 3> df_dcm(const Eigen::Vector3<T>& cam, const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        static const T zero = T(0.0);
+
+        Eigen::Matrix<T, 3, 3> result = Eigen::Matrix<T, 3, 3>::Zero();
+        const T depth = T(1.0) / inv_depth;
+        const T inv_f = T(1.0) / cam[0];
+        const T inv_df = -T(1.0) / (cam[0] * cam[0]);
+
+        result(0, 0) = depth * inv_df * (pnt[0] - cam[1]); 
+        result(0, 1) = -depth * inv_f; 
+        result(1, 0) = depth * inv_df * (pnt[1] - cam[2]); 
+        result(1, 2) = -depth * inv_f; 
+
+        return result;
+    }
+
+// reprojection derivatives by point
+static Eigen::Matrix<T, 3, 2> df_dpt(const Eigen::Vector3<T>& cam, const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        Eigen::Matrix<T, 3, 2> result = Eigen::Matrix<T, 3, 2>::Zero();
+
+        const T depth = T(1.0) / inv_depth;
+        const T inv_f = T(1.0) / cam[0];
+
+        result(0, 0) = depth * inv_f; 
+        result(1, 1) = depth * inv_f; 
+
+        return result;
+    }
+
+// reprojection derivatives by inverse depth
+static Eigen::Matrix<T, 3, 1> df_did(const Eigen::Vector3<T>& cam, const Eigen::Vector2<T>& pnt, T inv_depth = T(1.0)) {
+        const T did = -T(1.0) / (inv_depth * inv_depth);
+        const T inv_f = T(1.0) / cam[0];
+        return {did * inv_f * (pnt[0] - cam[1]), did * inv_f * (pnt[1] - cam[2]), did};
+    }
 };
 
 
