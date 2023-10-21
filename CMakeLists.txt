@@ -18,6 +18,7 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${CERES_INCLUDE
 
 set(SOURCES
   src/SolverUtils.cpp
+  src/solver/PnPSolver.cpp
 )
 
 set(HEADERS

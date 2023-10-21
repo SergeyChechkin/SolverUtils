@@ -1,3 +1,5 @@
+#include "solver/PnPSolver.h"
+
 #include "solver_utils/Rotation.h"
 #include "solver_utils/Transformation.h"
 #include "solver_utils/PerspectiveProjection.h"
@@ -6,8 +8,10 @@
 #include <ceres/rotation.h>
 
 #include <gtest/gtest.h>
+#include <random>
 #include <iostream>
 
+using namespace solver;
 using namespace solver::rotation;
 using namespace solver::transformation;
 using namespace solver::projection;
@@ -342,6 +346,69 @@ TEST(SolverUtils, PerspectiveRerojectionTest) {
     ASSERT_NEAR(f_j[0].v[5], df_did(0, 0), FLT_EPSILON);
     ASSERT_NEAR(f_j[1].v[5], df_did(1, 0), FLT_EPSILON);
     ASSERT_NEAR(f_j[2].v[5], df_did(2, 0), FLT_EPSILON);
+}
+
+TEST(SolverUtils, PnPTest) {
+
+    const Eigen::Vector<double, 6> pose = {M_PI / 10, 0, 0, 1, 2, 3};
+    const Eigen::Vector3d pnt = {-3, -2, -1};
+
+    const auto point_3d = IsometricTransformation<double>::f(pose, pnt);
+    const auto projection = PerspectiveProjection<double>::f(point_3d);
+
+    const auto point_3d_dps = IsometricTransformation<double>::df_dps(pose, pnt);
+    const auto projection_dpt = PerspectiveProjection<double>::df_dpt(point_3d);
+    const auto projection_dps = projection_dpt * point_3d_dps;
+
+    //std::cout << point_3d.transpose() << std::endl;
+    //std::cout << point_3d_dps << std::endl;
+    //std::cout << projection_dpt << std::endl;
+    //std::cout << projection_dps << std::endl;
+
+    using JetT = ceres::Jet<double, 6>;
+    Eigen::Vector<JetT, 6> pose_j;
+    Eigen::Vector3<JetT> pnt_j;
+    for(int i = 0; i < 6; ++i)  {
+        pose_j[i] = JetT(pose[i], i);
+    }
+    for(int i = 0; i < 3; ++i)  {
+        pnt_j[i] = JetT(pnt[i]);
+    }
+
+    const auto point_3d_j = IsometricTransformation<JetT>::f(pose_j, pnt_j);
+    const auto projection_j = PerspectiveProjection<JetT>::f(point_3d_j); 
+
+    //std::cout << projection_j << std::endl;
+}
+
+TEST(SolverUtils, PnPSolverTest) { 
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+    Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
+    
+    size_t size = 1000;
+    std::vector<Eigen::Vector3d> map(size);
+    std::vector<Eigen::Vector2d> frame_t(size);
+
+    for(size_t i = 0; i < size; ++i) {
+        const Eigen::Vector3d point_3d(dist(gen), dist(gen), dist(gen) + 2);
+        const Eigen::Vector3d point_3d_t = IsometricTransformation<double>::f(pose, point_3d);
+        map[i] = point_3d;
+        frame_t[i] = Eigen::Vector2d(point_3d_t[0]/point_3d_t[2], point_3d_t[1]/point_3d_t[2]);
+    }    
+
+    Eigen::Vector<double, 6> slvd_pose;
+    slvd_pose.setZero();
+    
+    PnPSolver::Cofiguration pnp_config;
+    
+    std::clock_t cpu_start = std::clock();
+    PnPSolver::SolvePose(map, frame_t, slvd_pose, pnp_config);
+    float cpu_duration = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
+    std::cout << "CPU time - " << cpu_duration << " ms." << std::endl;
+    
+    for(int i = 0; i < 6; ++i)
+        ASSERT_NEAR(pose[i], slvd_pose[i], 1.0e-3);
 }
 
 int main(int argc, char **argv) {
