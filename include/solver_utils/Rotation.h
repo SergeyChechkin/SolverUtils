@@ -14,7 +14,7 @@ template<typename T>
 class Rotation { 
 public:
     // point rotation
-    static Eigen::Vector3<T> f(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {  
+    static inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {  
         using std::hypot;
         using std::sin;
         using std::cos;
@@ -36,7 +36,7 @@ public:
     }
 
     // partial derivative by rotation
-    static Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {    
+    static inline Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {    
         using std::hypot;
         using std::sin;
         using std::cos;
@@ -58,7 +58,7 @@ public:
     }
 
     // partial derivative by point
-    static Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {    
+    static inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {    
         using std::hypot;
         using std::sin;
         using std::cos;

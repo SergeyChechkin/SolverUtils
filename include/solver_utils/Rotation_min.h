@@ -13,7 +13,7 @@ template<typename T>
 class Rotation_min { 
 public:
     // point rotation
-    static Eigen::Vector3<T> f(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {   
+    static inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& angle_axis, const Eigen::Vector3<T>& pnt) {   
         Eigen::Vector3<T> result;
         // (I + aa^) * pt
         result << pnt[0] + angle_axis[1] * pnt[2] - angle_axis[2] * pnt[1],
@@ -23,7 +23,7 @@ public:
     }
 
     // partial derivative by rotation
-    static Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& pnt) {    
+    static inline Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& pnt) {    
         static const T zero = T(0.0);
         Eigen::Matrix<T, 3, 3> result;
         // -pt^ 
@@ -34,7 +34,7 @@ public:
     }
 
     // partial derivative by point
-    static Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& angle_axis) {    
+    static inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& angle_axis) {    
         static const T one = T(1.0);
         Eigen::Matrix<T, 3, 3> result;
         // I + aa^

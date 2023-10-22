@@ -11,7 +11,7 @@ namespace solver::transformation {
 template<typename T>
 class IsometricTransformation {
 public:
-    static Eigen::Vector3<T> f(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) { 
+    static inline Eigen::Vector3<T> f(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) { 
         Eigen::Vector3<T> result = rotation::Rotation<T>::f(pose.head(3), pnt);
         result[0] += pose[3];
         result[1] += pose[4];
@@ -21,7 +21,7 @@ public:
     }
 
     // partial derivative by pose
-    static Eigen::Matrix<T, 3, 6> df_dps(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) {  
+    static inline Eigen::Matrix<T, 3, 6> df_dps(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) {  
         Eigen::Matrix<T, 3, 6> result;
 
         result.block(0, 0, 3, 3) = rotation::Rotation<T>::df_daa(pose.head(3), pnt);
@@ -31,12 +31,12 @@ public:
     }
 
     // partial derivative by point
-    static Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) {   
+    static inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) {   
         return rotation::Rotation<T>::df_dpt(pose.head(3), pnt);
     }
 
     // partial derivative by zero pose
-    inline static Eigen::Matrix<T, 3, 6> df_dps_zero(const Eigen::Vector3<T>& pnt) {
+    static inline Eigen::Matrix<T, 3, 6> df_dps_zero(const Eigen::Vector3<T>& pnt) {
         static const T one = T(1.0);
         Eigen::Matrix<T, 3, 6> result;
         

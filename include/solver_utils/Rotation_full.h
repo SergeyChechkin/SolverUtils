@@ -34,7 +34,7 @@ template<typename T>
 class Rotation_full { 
 public:
     // point rotation
-    static Eigen::Vector3<T> f(const AngleAxis<T>& aa, const Eigen::Vector3<T>& pnt) {   
+    static inline Eigen::Vector3<T> f(const AngleAxis<T>& aa, const Eigen::Vector3<T>& pnt) {   
         static const T one = T(1.0);
         Eigen::Vector3<T> result;
         const T a_cross_pt[3] = {aa.axis_[1] * pnt[2] - aa.axis_[2] * pnt[1],
@@ -53,7 +53,7 @@ public:
     }
 
     // partial derivative by rotation
-    static Eigen::Matrix<T, 3, 3> df_daa(const AngleAxis<T>& aa, const Eigen::Vector3<T>& rot_pnt) {  
+    static inline Eigen::Matrix<T, 3, 3> df_daa(const AngleAxis<T>& aa, const Eigen::Vector3<T>& rot_pnt) {  
         static const T one = T(1.0);
         // -(Rp)^J 
         const T c0 = aa.sin_theta_ / aa.theta_;
@@ -85,7 +85,7 @@ public:
     }
 
     // partial derivative by point
-    static Eigen::Matrix<T, 3, 3> df_dpt(const AngleAxis<T>& aa) {  
+    static inline Eigen::Matrix<T, 3, 3> df_dpt(const AngleAxis<T>& aa) {  
         static const T one = T(1.0);
         const T one_costh = (one - aa.cos_theta_);
         const T dtmp_dpt[3] = {aa.axis_[0] * one_costh, aa.axis_[1] * one_costh, aa.axis_[2] * one_costh};

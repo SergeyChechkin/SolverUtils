@@ -33,9 +33,8 @@ private:
     // point - 3D point
     // feature - unit plane projection 
     // pose - frame pose
-    // H - Hessian, Jt x J   
-    // b - -et x J 
-    // cost - et x e; 
+    // J - d_f / d_pose   
+    // error - residual error
     static inline void GetPoseFactor(
         const Eigen::Vector3d& point,
         const Eigen::Vector2d& feature, 
