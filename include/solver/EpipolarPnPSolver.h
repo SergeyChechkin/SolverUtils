@@ -7,9 +7,9 @@
 #include <Eigen/Core>
 namespace solver {
 
-// Single frame Perspective-n-Point transformation solver (Gauss–Newton algorithm).
-// Required less than 30 degree rotation error initial guess from optimal solution in order to converge.   
-class PnPSolver {
+// Perspective-n-Point transformation solver with epipolar constraints (Gauss–Newton algorithm).
+// Depth of 3D points is undefined 
+class EpipolarPnPSolver {
 public:
     struct Cofiguration {
         double min_cost = 1.0E-6;
@@ -25,18 +25,16 @@ public:
 
     static Report SolvePose(
         const std::vector<Eigen::Vector3d>& points,
+        const std::vector<Eigen::Vector2d>& points_info,
         const std::vector<Eigen::Vector2d>& features, 
         Eigen::Vector<double, 6>& pose, 
         const Cofiguration& config);
+    
 private:
-    // Perspective-n-Point factor, direct error between 3D point projection and feature 
-    // point - 3D point
-    // feature - unit plane projection 
-    // pose - frame pose
-    // J - d_f / d_pose   
-    // error - residual error
+    // point_info - disparity info mat diagonal 
     static inline void GetPoseFactor(
         const Eigen::Vector3d& point,
+        const Eigen::Vector2d& point_info,
         const Eigen::Vector2d& feature, 
         const Eigen::Vector<double, 6>& pose,
         Eigen::Matrix<double, 2, 6>& J,
@@ -44,4 +42,3 @@ private:
 };
 
 }
-

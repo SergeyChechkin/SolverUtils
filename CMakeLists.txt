@@ -19,6 +19,9 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIR} ${CERES_INCLUDE
 set(SOURCES
   src/SolverUtils.cpp
   src/solver/PnPSolver.cpp
+  src/solver/BASolver.cpp
+  src/solver/HomographySolver.cpp
+  src/solver/EpipolarPnPSolver.cpp
 )
 
 set(HEADERS
