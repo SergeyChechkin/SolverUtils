@@ -5,6 +5,7 @@
 #pragma once
 
 #include <ceres/rotation.h>
+#include <Eigen/Geometry>
 
 namespace solver {
 

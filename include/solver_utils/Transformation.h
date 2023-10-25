@@ -5,6 +5,9 @@
 #pragma once
 
 #include "Rotation.h"
+#include "Functions.h"
+
+#include <Eigen/Geometry>
 
 namespace solver::transformation {
 
@@ -60,6 +63,32 @@ public:
 
         return result;
     }
+public:
+    IsometricTransformation(const Eigen::Vector<T, 6>& pose)
+    : rot_(pose.head(3)) 
+    {
+        pose_ = ExpSE3(pose);      
+    }
+
+    inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& pnt) { 
+        return pose_ * pnt;
+    }
+
+    inline Eigen::Matrix<T, 3, 6> df_dps(const Eigen::Vector3<T>& pnt) {
+        Eigen::Matrix<T, 3, 6> result;
+
+        result.block(0, 0, 3, 3) = rot_.df_daa(pnt);
+        result.block(0, 3, 3, 3) = Eigen::Matrix3<T>::Identity();
+
+        return result; 
+    }
+
+    inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& pnt) {
+        return rot_.df_dpt(pnt); 
+    }
+private:
+    rotation::Rotation<T> rot_;
+    Eigen::Transform<T, 3, Eigen::Isometry> pose_;
 }; 
 
 }

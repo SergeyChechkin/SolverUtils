@@ -163,13 +163,77 @@ TEST(SolverUtils, RotationObjectTest) {
     ASSERT_NEAR(f_j[2].v[5], df_dpt(2, 2), FLT_EPSILON);
 }
 
-TEST(SolverUtils, TransformationTest) {
+TEST(SolverUtils, TransformationClassTest) {
     const Eigen::Vector<double, 6> pose = {M_PI / 5, 0, 0, 1, 2, 3};
     const Eigen::Vector3d pt = {1, 1, 1};
     
     auto f = IsometricTransformation<double>::f(pose, pt);
     auto df_dps = IsometricTransformation<double>::df_dps(pose, pt);
     auto df_dpt = IsometricTransformation<double>::df_dpt(pose, pt);
+
+    // using ceres::Jet for comparosing 
+    using JetT = ceres::Jet<double, 9>;
+    Eigen::Vector<JetT, 6> pose_j;
+    Eigen::Vector3<JetT> pt_j;
+    for(int i = 0; i < 6; ++i)  {
+        pose_j[i] = JetT(pose[i], i);
+    }
+    for(int i = 0; i < 3; ++i)  {
+        pt_j[i] = JetT(pt[i], i + 6);
+    }
+
+    Eigen::Vector3<JetT> f_j = IsometricTransformation<JetT>::f(pose_j, pt_j);
+
+    ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].a, f[2], FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[0], df_dps(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[0], df_dps(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[0], df_dps(2, 0), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[1], df_dps(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[1], df_dps(1, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[1], df_dps(2, 1), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[2], df_dps(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[2], df_dps(1, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[2], df_dps(2, 2), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[3], df_dps(0, 3), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[3], df_dps(1, 3), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[3], df_dps(2, 3), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[4], df_dps(0, 4), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[4], df_dps(1, 4), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[4], df_dps(2, 4), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[5], df_dps(0, 5), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[5], df_dps(1, 5), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[5], df_dps(2, 5), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[6], df_dpt(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[6], df_dpt(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[6], df_dpt(2, 0), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[7], df_dpt(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[7], df_dpt(1, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[7], df_dpt(2, 1), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[8], df_dpt(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[8], df_dpt(1, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[8], df_dpt(2, 2), FLT_EPSILON);
+}
+
+TEST(SolverUtils, TransformationObjectTest) {
+    const Eigen::Vector<double, 6> pose = {M_PI / 5, 0, 0, 1, 2, 3};
+    const Eigen::Vector3d pt = {1, 1, 1};
+    
+    IsometricTransformation<double> it(pose);
+
+    auto f = it.f(pose, pt);
+    auto df_dps = it.df_dps(pose, pt);
+    auto df_dpt = it.df_dpt(pose, pt);
 
     // using ceres::Jet for comparosing 
     using JetT = ceres::Jet<double, 9>;
