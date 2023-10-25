@@ -20,6 +20,10 @@ public:
         return result;
     }
 
+    static inline Eigen::Vector3<T> f(const Eigen::Transform<T, 3, Eigen::Isometry>& ism_pose, const Eigen::Vector3<T>& pnt) { 
+        return ism_pose * pnt;
+    }
+
     // partial derivative by pose
     static inline Eigen::Matrix<T, 3, 6> df_dps(const Eigen::Vector<T, 6>& pose, const Eigen::Vector3<T>& pnt) {  
         Eigen::Matrix<T, 3, 6> result;

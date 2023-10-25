@@ -41,9 +41,11 @@ PnPSolver::Report PnPSolver::SolvePose(
             cost += error.squaredNorm(); 
         }
 
+        // solve linear system
         Eigen::Vector<double, 6> dx = H.ldlt().solve(b);
+        // update pose
         pose += dx;
-        
+
         double mean_cost = cost / factor_count;
         double cost_diff = last_mean_cost - mean_cost;
         double cost_change = std::abs(cost_diff) / mean_cost;

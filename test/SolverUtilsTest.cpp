@@ -67,13 +67,62 @@ TEST(SolverUtils, RotationMinTest) {
     ASSERT_DOUBLE_EQ(f_j[2].v[5], df_dpt(2, 2));   
 }
 
-TEST(SolverUtils, RotationTest) {
+TEST(SolverUtils, RotationClassTest) {
     const Eigen::Vector3d aa = {0.1, 0, 0};
     const Eigen::Vector3d pt = {1, 2, 3};
 
     auto f = Rotation<double>::f(aa, pt);
     auto df_daa = Rotation<double>::df_daa(aa, pt);
     auto df_dpt = Rotation<double>::df_dpt(aa, pt);
+
+    // using ceres::Jet for diravatives validation 
+    using JetT = ceres::Jet<double, 6>;
+    Eigen::Vector3<JetT> pt_j, aa_j;
+    for(int i = 0; i < 3; ++i)  {
+        aa_j[i] = JetT(aa[i], i);
+        pt_j[i] = JetT(pt[i], i+3);
+    }
+
+    auto f_j = Rotation<JetT>::f(aa_j, pt_j);
+
+    ASSERT_NEAR(f_j[0].a, f[0], FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].a, f[1], FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].a, f[2], FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[0], df_daa(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[0], df_daa(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[0], df_daa(2, 0), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[1], df_daa(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[1], df_daa(1, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[1], df_daa(2, 1), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[2], df_daa(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[2], df_daa(1, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[2], df_daa(2, 2), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[3], df_dpt(0, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[3], df_dpt(1, 0), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[3], df_dpt(2, 0), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[4], df_dpt(0, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[4], df_dpt(1, 1), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[4], df_dpt(2, 1), FLT_EPSILON);
+
+    ASSERT_NEAR(f_j[0].v[5], df_dpt(0, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[1].v[5], df_dpt(1, 2), FLT_EPSILON);
+    ASSERT_NEAR(f_j[2].v[5], df_dpt(2, 2), FLT_EPSILON);
+}
+
+TEST(SolverUtils, RotationObjectTest) {
+    const Eigen::Vector3d aa = {0.1, 0, 0};
+    const Eigen::Vector3d pt = {1, 2, 3};
+
+    Rotation<double> rot(aa);
+
+    auto f = rot.f(pt);
+    auto df_daa = rot.df_daa(pt);
+    auto df_dpt = rot.df_dpt(pt);
 
     // using ceres::Jet for diravatives validation 
     using JetT = ceres::Jet<double, 6>;
@@ -478,7 +527,8 @@ TEST(SolverUtils, HomographySolverTest) {
 TEST(SolverUtils, EpipolarPnPSolver) { 
     std::default_random_engine gen;
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
-    Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
+    Eigen::Vector<double, 6> pose = {-0.1, 0.2, 0.3, 0.1, -0.2, 0.3};
+    //Eigen::Vector<double, 6> pose = {0, 0, 0, 0.1, 0, 0};
     
     size_t size = 1000;
     std::vector<Eigen::Vector3d> map(size);
@@ -486,7 +536,7 @@ TEST(SolverUtils, EpipolarPnPSolver) {
     std::vector<Eigen::Vector2d> frame_1(size);
 
     std::vector<Eigen::Vector3d> slvd_map(size);
-    std::vector<Eigen::Vector2d> info_map(size, {0.01, 1});
+    std::vector<Eigen::Vector2d> info_map(size, {0.001, 1});
 
     for(size_t i = 0; i < size; ++i) {
         const Eigen::Vector3d point_3d(dist(gen), dist(gen), dist(gen) + 2);
@@ -508,7 +558,7 @@ TEST(SolverUtils, EpipolarPnPSolver) {
     float cpu_duration = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
     std::cout << "CPU time - " << cpu_duration << " ms." << std::endl;
 
-    //std::cout << slvd_pose.transpose() << std::endl;    
+    std::cout << slvd_pose.transpose() << std::endl;    
 }
 
 int main(int argc, char **argv) {
