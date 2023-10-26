@@ -1,5 +1,4 @@
 #include "solver/PnPSolver.h"
-#include "solver_utils/Transformation.h"
 #include "solver_utils/PerspectiveProjection.h"
 #include "solver_utils/Functions.h"
 
@@ -8,6 +7,8 @@
 #include <iostream>
 
 using namespace solver;
+using namespace solver::transformation;
+using namespace solver::projection;
 
 PnPSolver::Report PnPSolver::SolvePose(
     const std::vector<Eigen::Vector3d>& points,
@@ -33,14 +34,15 @@ PnPSolver::Report PnPSolver::SolvePose(
         b = Eigen::Matrix<double, 6, 1>::Zero();   
         double cost = 0;
 
+        IsometricTransformation<double> it(pose);
+
         for(size_t i = 0; i < factor_count; ++i) {
-            GetPoseFactor(points[i], features[i], pose, J, error);
+            GetPoseFactor(points[i], features[i], it, J, error);
 
             H += J.transpose() * J;
             b -= error.transpose() * J;
             cost += error.squaredNorm(); 
         }
-
         // solve linear system
         Eigen::Vector<double, 6> dx = H.ldlt().solve(b);
         // update pose
@@ -52,13 +54,15 @@ PnPSolver::Report PnPSolver::SolvePose(
 
         if (config.verbal) {
             std::cout << "Iteration " << itr << ": "; 
-            std::cout << "mean cost - " << cost / factor_count << ", ";
+            std::cout << "mean cost - " << mean_cost << ", ";
+            std::cout << "cost diff - " << cost_diff << ", ";
+            std::cout << "cost change - " << cost_change << ", ";
             std::cout << "step - " << dx.norm() << std::endl;
         }
 
         report.iterations = itr;
-        report.cost = cost;
- 
+        report.min_cost = cost;
+
         if (mean_cost < config.min_cost)
             break;
         
@@ -78,13 +82,26 @@ void PnPSolver::GetPoseFactor(
     Eigen::Matrix<double, 2, 6>& J,
     Eigen::Matrix<double, 2, 1>& error) 
 {
-    using namespace solver::transformation;
-    using namespace solver::projection;
-
     const auto point_3d = IsometricTransformation<double>::f(pose, point);
     const auto projection = PerspectiveProjection<double>::f(point_3d);
 
     const auto point_3d_dps = IsometricTransformation<double>::df_dps(pose, point);
+    const auto projection_dpt = PerspectiveProjection<double>::df_dpt(point_3d);
+    J = projection_dpt * point_3d_dps;
+    error = projection - feature;
+}
+
+void PnPSolver::GetPoseFactor(
+    const Eigen::Vector3d& point,
+    const Eigen::Vector2d& feature, 
+    const transformation::IsometricTransformation<double>& pose,
+    Eigen::Matrix<double, 2, 6>& J,
+    Eigen::Matrix<double, 2, 1>& error) 
+{
+    const auto point_3d = pose.f(point);
+    const auto projection = PerspectiveProjection<double>::f(point_3d);
+
+    const auto point_3d_dps = pose.df_dps(point);
     const auto projection_dpt = PerspectiveProjection<double>::df_dpt(point_3d);
     J = projection_dpt * point_3d_dps;
     error = projection - feature;

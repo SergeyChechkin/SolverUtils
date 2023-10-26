@@ -103,11 +103,11 @@ public:
         }
     }
 
-    inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& pnt) { 
+    inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& pnt) const { 
         return rot_mat_ * pnt;
     }
 
-    inline Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& pnt) {
+    inline Eigen::Matrix<T, 3, 3> df_daa(const Eigen::Vector3<T>& pnt) const {
         if (min_version_) {
             return Rotation_min<T>::df_daa(pnt);
         } else {
@@ -115,7 +115,7 @@ public:
         }
     }
 
-    inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& pnt) {    
+    inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& pnt) const {    
         return df_dpt_;
     }
 private:

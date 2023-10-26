@@ -70,11 +70,11 @@ public:
         pose_ = ExpSE3(pose);      
     }
 
-    inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& pnt) { 
+    inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& pnt) const  { 
         return pose_ * pnt;
     }
 
-    inline Eigen::Matrix<T, 3, 6> df_dps(const Eigen::Vector3<T>& pnt) {
+    inline Eigen::Matrix<T, 3, 6> df_dps(const Eigen::Vector3<T>& pnt) const {
         Eigen::Matrix<T, 3, 6> result;
 
         result.block(0, 0, 3, 3) = rot_.df_daa(pnt);
@@ -83,9 +83,18 @@ public:
         return result; 
     }
 
-    inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& pnt) {
+    inline Eigen::Matrix<T, 3, 3> df_dpt(const Eigen::Vector3<T>& pnt) const {
         return rot_.df_dpt(pnt); 
     }
+
+    inline Eigen::Vector3<T> translation() const  { 
+        return pose_.translation();
+    }
+
+    inline Eigen::Matrix3<T> rotation() const  { 
+        return pose_.linear();
+    }
+    
 private:
     rotation::Rotation<T> rot_;
     Eigen::Transform<T, 3, Eigen::Isometry> pose_;

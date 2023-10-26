@@ -3,8 +3,9 @@
 /// Autor: Sergey Chechkin, schechkin@gmail.com 
 
 #pragma once
-
+#include "solver_utils/Transformation.h"
 #include <Eigen/Core>
+
 namespace solver {
 
 // Single frame Perspective-n-Point transformation solver (Gauss–Newton algorithm).
@@ -12,14 +13,14 @@ namespace solver {
 class PnPSolver {
 public:
     struct Cofiguration {
-        double min_cost = 1.0E-6;
+        double min_cost = 1.0E-7;
         double min_cost_change = 1.0E-8;
         size_t max_iterations = 150;
         bool verbal = true;
     };
 
     struct Report {
-        double cost;
+        double min_cost;
         size_t iterations;
     };
 
@@ -39,6 +40,13 @@ private:
         const Eigen::Vector3d& point,
         const Eigen::Vector2d& feature, 
         const Eigen::Vector<double, 6>& pose,
+        Eigen::Matrix<double, 2, 6>& J,
+        Eigen::Matrix<double, 2, 1>& error);
+
+    static inline void GetPoseFactor(
+        const Eigen::Vector3d& point,
+        const Eigen::Vector2d& feature, 
+        const transformation::IsometricTransformation<double>& pose,
         Eigen::Matrix<double, 2, 6>& J,
         Eigen::Matrix<double, 2, 1>& error);
 };

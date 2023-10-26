@@ -591,8 +591,7 @@ TEST(SolverUtils, HomographySolverTest) {
 TEST(SolverUtils, EpipolarPnPSolver) { 
     std::default_random_engine gen;
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
-    Eigen::Vector<double, 6> pose = {-0.1, 0.2, 0.3, 0.1, -0.2, 0.3};
-    //Eigen::Vector<double, 6> pose = {0, 0, 0, 0.1, 0, 0};
+    Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
     
     size_t size = 1000;
     std::vector<Eigen::Vector3d> map(size);
@@ -600,7 +599,7 @@ TEST(SolverUtils, EpipolarPnPSolver) {
     std::vector<Eigen::Vector2d> frame_1(size);
 
     std::vector<Eigen::Vector3d> slvd_map(size);
-    std::vector<Eigen::Vector2d> info_map(size, {0.001, 1});
+    std::vector<Eigen::Vector2d> info_map(size, {0.0001, 1});
 
     for(size_t i = 0; i < size; ++i) {
         const Eigen::Vector3d point_3d(dist(gen), dist(gen), dist(gen) + 2);
