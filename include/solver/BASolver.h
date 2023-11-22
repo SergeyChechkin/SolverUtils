@@ -14,6 +14,12 @@ public:
         const std::vector<Eigen::Vector2d>& features_1, 
         Eigen::Vector<double, 6>& pose, 
         std::vector<Eigen::Vector3d>& points);
+
+    static void SolvePosePoints(
+        const std::vector<Eigen::Vector2d>& features_0,
+        const std::vector<Eigen::Vector2d>& features_1, 
+        Eigen::Vector<double, 6>& pose, 
+        std::vector<Eigen::Vector3d>& points);
 };
 
 }

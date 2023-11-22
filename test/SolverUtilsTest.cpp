@@ -528,37 +528,6 @@ TEST(SolverUtils, PnPSolverTest) {
         ASSERT_NEAR(pose[i], slvd_pose[i], 1.0e-3);
 }
 
-TEST(SolverUtils, BASolverTest) { 
-    std::default_random_engine gen;
-    std::uniform_real_distribution<double> dist(-1.0, 1.0);
-    Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
-    
-    size_t size = 1000;
-    std::vector<Eigen::Vector3d> map(size);
-    std::vector<Eigen::Vector3d> slvd_map(size);
-    std::vector<Eigen::Vector2d> frame_0(size);
-    std::vector<Eigen::Vector2d> frame_1(size);
-
-    for(size_t i = 0; i < size; ++i) {
-        const Eigen::Vector3d point_3d(dist(gen), dist(gen), dist(gen) + 2);
-        const Eigen::Vector3d point_3d_t = IsometricTransformation<double>::f(pose, point_3d);
-        map[i] = point_3d;
-        slvd_map[i] = point_3d.normalized();
-        frame_0[i] = PerspectiveProjection<double>::f(point_3d);
-        frame_1[i] = PerspectiveProjection<double>::f(point_3d_t);
-    }    
-
-    Eigen::Vector<double, 6> slvd_pose;
-    slvd_pose.setZero();
-    
-    std::clock_t cpu_start = std::clock();
-    BASolver::SolvePosePointsCeres(frame_0, frame_1, slvd_pose, slvd_map);
-    float cpu_duration = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
-    std::cout << "CPU time - " << cpu_duration << " ms." << std::endl;
-
-    //std::cout << "BASolver: "  << slvd_pose.transpose() << std::endl;
-}
-
 TEST(SolverUtils, HomographySolverTest) { 
     std::default_random_engine gen;
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
@@ -622,6 +591,40 @@ TEST(SolverUtils, EpipolarPnPSolver) {
     std::cout << "CPU time - " << cpu_duration << " ms." << std::endl;
 
     std::cout << slvd_pose.transpose() << std::endl;    
+}
+
+TEST(SolverUtils, BASolverTest) { 
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+    Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
+    //Eigen::Vector<double, 6> pose = {0.1, 0.0, 0.0, 0.0, 0.0, 0.0};
+    
+    size_t size = 100;
+    std::vector<Eigen::Vector3d> map(size);
+    std::vector<Eigen::Vector3d> slvd_map(size);
+    std::vector<Eigen::Vector2d> frame_0(size);
+    std::vector<Eigen::Vector2d> frame_1(size);
+
+    for(size_t i = 0; i < size; ++i) {
+        const Eigen::Vector3d point_3d(dist(gen), dist(gen), dist(gen) + 2);
+        const Eigen::Vector3d point_3d_t = IsometricTransformation<double>::f(pose, point_3d);
+        map[i] = point_3d;
+        slvd_map[i] = point_3d.normalized();
+        //slvd_map[i] = point_3d;
+        frame_0[i] = PerspectiveProjection<double>::f(point_3d);
+        frame_1[i] = PerspectiveProjection<double>::f(point_3d_t);
+    }    
+
+    Eigen::Vector<double, 6> slvd_pose;
+    slvd_pose.setZero();
+    
+    std::clock_t cpu_start = std::clock();
+    //BASolver::SolvePosePointsCeres(frame_0, frame_1, slvd_pose, slvd_map);
+    BASolver::SolvePosePoints(frame_0, frame_1, slvd_pose, slvd_map);
+    float cpu_duration = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
+    std::cout << "CPU time - " << cpu_duration << " ms." << std::endl;
+
+    std::cout << "BASolver: "  << slvd_pose.transpose() << std::endl;
 }
 
 int main(int argc, char **argv) {

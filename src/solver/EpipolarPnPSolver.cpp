@@ -111,7 +111,7 @@ void EpipolarPnPSolver::GetPoseFactor(
         zero_depth_projection_dps = PerspectiveProjection<double>::df_dpt(zero_depth_point) * zero_depth_point_dps;
     } 
 
-    //TODO: derive the rest 
+    //TODO: derive close form for the rest  
     Eigen::Vector<JetT, 2> projection_J;
     projection_J[0].a = projection[0];
     projection_J[1].a = projection[1];
@@ -171,7 +171,7 @@ void EpipolarPnPSolver::GetPoseFactor(
         zero_depth_projection_dps = PerspectiveProjection<double>::df_dpt(zero_depth_point) * zero_depth_point_dps;
     } 
 
-    //TODO: derive the rest 
+    //TODO: derive close form for the rest 
     Eigen::Vector<JetT, 2> projection_J;
     projection_J[0].a = projection[0];
     projection_J[1].a = projection[1];
