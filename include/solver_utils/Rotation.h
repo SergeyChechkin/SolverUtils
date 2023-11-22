@@ -80,6 +80,10 @@ public:
     }
 public:
     Rotation(const Eigen::Vector3<T>& angle_axis) {
+        SetAngleAxis(angle_axis);
+    }
+    
+    inline void SetAngleAxis(const Eigen::Vector3<T>& angle_axis) {
         using std::hypot;
         using std::sin;
         using std::cos;

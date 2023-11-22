@@ -64,11 +64,21 @@ public:
         return result;
     }
 public:
+    IsometricTransformation() 
+    : rot_(Eigen::Vector<T, 3>::Zero())
+    , pose_(Eigen::Transform<T, 3, Eigen::Isometry>::Identity()) { 
+        
+    }
     IsometricTransformation(const Eigen::Vector<T, 6>& pose)
     : rot_(pose.head(3)) 
     {
         pose_ = ExpSE3(pose);      
     }
+
+    inline void SetPose(const Eigen::Vector<T, 6>& pose) {
+        rot_.SetAngleAxis(pose.head(3));
+        pose_ = ExpSE3(pose);      
+    } 
 
     inline Eigen::Vector3<T> f(const Eigen::Vector3<T>& pnt) const  { 
         return pose_ * pnt;

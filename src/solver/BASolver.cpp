@@ -16,6 +16,40 @@ using namespace solver;
 using namespace solver::transformation;
 using namespace solver::projection;
 
+class PrecomputeIsometricTransformation {
+public:
+    inline void Clear() {
+        reset_ = true;
+    }
+
+    inline Eigen::Vector3d f(const Eigen::Vector<double, 6>& pose, const Eigen::Vector3d& pnt) { 
+        if (reset_) {
+            it_.SetPose(pose);
+            reset_ = false;
+        }
+        return it_.f(pnt);
+    }
+
+    inline Eigen::Matrix<double, 3, 6> df_dps(const Eigen::Vector<double, 6>& pose, const Eigen::Vector3d& pnt) {
+        if (reset_) {
+            it_.SetPose(pose);
+            reset_ = false;
+        }
+        return it_.df_dps(pnt);
+    }
+
+    inline Eigen::Matrix<double, 3, 3> df_dpt(const Eigen::Vector<double, 6>& pose, const Eigen::Vector3d& pnt) {
+        if (reset_) {
+            it_.SetPose(pose);
+            reset_ = false;
+        }
+        return it_.df_dpt(pnt);
+    }
+private:
+    bool reset_ = true;
+    IsometricTransformation<double> it_;
+};
+
 class BA_ADCF {
 public:
     template<typename T>
@@ -40,7 +74,7 @@ public:
     BA_ADCF(const Eigen::Vector2d& up_point) 
         : up_point_(up_point) {}
 private:
-    Eigen::Vector2d up_point_;
+    Eigen::Vector2d up_point_; //unit plane point
 };
 
 class BA_FIXED_ADCF {
@@ -65,7 +99,7 @@ public:
     BA_FIXED_ADCF(const Eigen::Vector2d& up_point) 
         : up_point_(up_point) {}
 private:
-    Eigen::Vector2d up_point_;
+    Eigen::Vector2d up_point_; //unit plane point
 };
 
 class BA_CF : public ceres::SizedCostFunction<2, 6, 3> {
@@ -78,7 +112,9 @@ public:
             Eigen::Map<const Eigen::Vector<double, 6>> pose(parameters[0]);
             Eigen::Map<const Eigen::Vector<double, 3>> pnt(parameters[1]);
 
-            const auto pnt_t = solver::transformation::IsometricTransformation<double>::f(pose, pnt);
+            //const auto pnt_t = solver::transformation::IsometricTransformation<double>::f(pose, pnt);
+            const auto pnt_t = p_it_->f(pose, pnt);
+    
             const auto projection = solver::projection::PerspectiveProjection<double>::f(pnt_t);
 
             Eigen::Map<Eigen::Vector2<double>> res(residuals);
@@ -88,13 +124,15 @@ public:
                 const auto projection_dpt = solver::projection::PerspectiveProjection<double>::df_dpt(pnt_t);
                 if (jacobians[0]) {
                     Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> J0(jacobians[0]);
-                    const auto point_3d_dps = solver::transformation::IsometricTransformation<double>::df_dps(pose, pnt);
+                    //const auto point_3d_dps = solver::transformation::IsometricTransformation<double>::df_dps(pose, pnt);
+                    const auto point_3d_dps = p_it_->df_dps(pose, pnt);
                     J0 = projection_dpt * point_3d_dps;
                 }
 
                 if (jacobians[1]) {
                     Eigen::Map<Eigen::Matrix<double, 2, 3, Eigen::RowMajor>> J1(jacobians[1]);
-                    const auto point_3d_dpt = solver::transformation::IsometricTransformation<double>::df_dpt(pose, pnt);
+                    //const auto point_3d_dpt = solver::transformation::IsometricTransformation<double>::df_dpt(pose, pnt);
+                    const auto point_3d_dpt = p_it_->df_dpt(pose, pnt);
                     J1 = projection_dpt * point_3d_dpt;
                 }
             }
@@ -102,17 +140,18 @@ public:
             return true;
         }
 
-    static ceres::CostFunction* Create(const Eigen::Vector2d& up_point) {
-        return new BA_CF(up_point);
+    static ceres::CostFunction* Create(const Eigen::Vector2d& up_point, PrecomputeIsometricTransformation* p_it) {
+        return new BA_CF(up_point, p_it);
     }
 private:
-    BA_CF(const Eigen::Vector2d& up_point) 
-        : up_point_(up_point) {}
+    BA_CF(const Eigen::Vector2d& up_point, PrecomputeIsometricTransformation* p_it) 
+        : up_point_(up_point)
+        , p_it_(p_it) {
+        }
 private:
-    Eigen::Vector2d up_point_;
+    Eigen::Vector2d up_point_;  //unit plane point
+    PrecomputeIsometricTransformation* p_it_; 
 };
-
-
 
 class BA_FIXED_CF : public ceres::SizedCostFunction<2, 3> {
 public:
@@ -144,8 +183,21 @@ private:
     BA_FIXED_CF(const Eigen::Vector2d& up_point) 
         : up_point_(up_point) {}
 private:
-    Eigen::Vector2d up_point_;
+    Eigen::Vector2d up_point_; //unit plane point
 };
+
+class CallbackTest : public ceres::EvaluationCallback {
+public:
+    CallbackTest(PrecomputeIsometricTransformation* p_it) : p_it_(p_it) {}
+    void PrepareForEvaluation(
+        bool evaluate_jacobians,
+        bool new_evaluation_point) override {
+            p_it_->Clear();
+    }
+private:
+    PrecomputeIsometricTransformation* p_it_; 
+};
+
 
 void BASolver::SolvePosePointsCeres(
     const std::vector<Eigen::Vector2d>& features_0,
@@ -154,7 +206,11 @@ void BASolver::SolvePosePointsCeres(
     std::vector<Eigen::Vector3d>& points) {
         
         CHECK_EQ(features_0.size(), features_1.size());
-        ceres::Problem problem;
+        
+        PrecomputeIsometricTransformation p_it;
+        ceres::Problem::Options pb_options;
+        pb_options.evaluation_callback = new CallbackTest(&p_it); 
+        ceres::Problem problem(pb_options);
 
         //const double loss_threshold = 2.0 / 465;    // about 2 pixels threshold
         //ceres::LossFunction* lf = new ceres::CauchyLoss(loss_threshold);
@@ -167,13 +223,14 @@ void BASolver::SolvePosePointsCeres(
             //problem.AddResidualBlock(BA_ADCF::Create(features_1[i]), lf, pose.data(), points[i].data());
 
             problem.AddResidualBlock(BA_FIXED_CF::Create(features_0[i]), lf, points[i].data());
-            problem.AddResidualBlock(BA_CF::Create(features_1[i]), lf, pose.data(), points[i].data());
+            problem.AddResidualBlock(BA_CF::Create(features_1[i], &p_it), lf, pose.data(), points[i].data());
         }
 
         ceres::Solver::Options options;
         //options.minimizer_progress_to_stdout = true;
         //options.num_threads = std::thread::hardware_concurrency();
         options.linear_solver_type = ceres::SPARSE_SCHUR;
+        //options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
         
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
