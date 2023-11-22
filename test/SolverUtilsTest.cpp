@@ -599,7 +599,7 @@ TEST(SolverUtils, BASolverTest) {
     Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
     //Eigen::Vector<double, 6> pose = {0.1, 0.0, 0.0, 0.0, 0.0, 0.0};
     
-    size_t size = 100;
+    size_t size = 1000;
     std::vector<Eigen::Vector3d> map(size);
     std::vector<Eigen::Vector3d> slvd_map(size);
     std::vector<Eigen::Vector2d> frame_0(size);
@@ -619,8 +619,8 @@ TEST(SolverUtils, BASolverTest) {
     slvd_pose.setZero();
     
     std::clock_t cpu_start = std::clock();
-    //BASolver::SolvePosePointsCeres(frame_0, frame_1, slvd_pose, slvd_map);
-    BASolver::SolvePosePoints(frame_0, frame_1, slvd_pose, slvd_map);
+    BASolver::SolvePosePointsCeres(frame_0, frame_1, slvd_pose, slvd_map);
+    //BASolver::SolvePosePoints(frame_0, frame_1, slvd_pose, slvd_map);
     float cpu_duration = 1000.0 * (std::clock() - cpu_start) / CLOCKS_PER_SEC;
     std::cout << "CPU time - " << cpu_duration << " ms." << std::endl;
 

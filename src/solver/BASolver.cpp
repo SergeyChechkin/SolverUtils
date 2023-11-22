@@ -7,6 +7,7 @@
 
 #include <ceres/ceres.h>
 #include <glog/logging.h>
+#include <Eigen/Sparse>
 
 #include <iostream>
 #include <thread>
@@ -170,7 +171,7 @@ void BASolver::SolvePosePointsCeres(
         }
 
         ceres::Solver::Options options;
-        options.minimizer_progress_to_stdout = true;
+        //options.minimizer_progress_to_stdout = true;
         //options.num_threads = std::thread::hardware_concurrency();
         options.linear_solver_type = ceres::SPARSE_SCHUR;
         
@@ -233,16 +234,21 @@ void BASolver::SolvePosePointsCeres(
             auto H = J.transpose() * J; 
             auto b = -J.transpose() * error;
             double cost = error.squaredNorm();
-            
+
             double lamda = 0.000001;
-            auto dx = (H + lamda * I).inverse() * b;
+            Eigen::SparseMatrix<double> H_sp(6 + 3 * size, 6 + 3 * size);
+            H_sp = (H + lamda * I).sparseView();
+            Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> chol(H_sp);
+            auto dx = chol.solve(b);
+             
+            //auto dx = (H + lamda * I).inverse() * b;
 
             pose += dx.block<6, 1>(0, 0);
             for(size_t i = 0; i < size; ++i) {
                 points[i] += dx.block<3, 1>(6 + 3 * i, 0);
             }
 
-            std::cout << "Cost " << cost << std::endl;
-            std::cout << pose.transpose() << std::endl;
+            //std::cout << "Cost " << cost << std::endl;
+            //std::cout << pose.transpose() << std::endl;
         }
     }
