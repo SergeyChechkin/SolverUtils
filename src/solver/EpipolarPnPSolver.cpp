@@ -79,64 +79,16 @@ EpipolarPnPSolver::Report EpipolarPnPSolver::SolvePose(
     return report;
 }
 
-void EpipolarPnPSolver::GetPoseFactor(
-    const Eigen::Vector3d& point,
-    const Eigen::Vector2d& point_info,
-    const Eigen::Vector2d& feature, 
-    const Eigen::Vector<double, 6>& pose,
-    Eigen::Matrix<double, 2, 6>& J,
-    Eigen::Matrix<double, 2, 1>& error) 
+EpipolarPnPSolver::Report EpipolarPnPSolver::SolvePosePoints(
+    const std::vector<Eigen::Vector2d>& features_0, // static frame 
+    const std::vector<Eigen::Vector2d>& features_1, // transformed frame
+    std::vector<Eigen::Vector3d>& points,
+    Eigen::Vector<double, 6>& pose, 
+    const Cofiguration& config) 
 {
-    using JetT = ceres::Jet<double, 6>;
-    using std::abs;
+    Report report;
 
-    const auto point_trans = IsometricTransformation<double>::f(pose, point);
-    const auto projection = PerspectiveProjection<double>::f(point_trans);
-    const auto projection_error = projection - feature;
-
-    const auto point_trans_dps = IsometricTransformation<double>::df_dps(pose, point);
-    const auto projection_dpt = PerspectiveProjection<double>::df_dpt(point_trans);
-    const auto projection_dps = projection_dpt * point_trans_dps;
-
-    const auto zero_depth_point = pose.tail(3);
-
-    Eigen::Vector2d zero_depth_projection = Eigen::Vector2d::Zero();
-    Eigen::Matrix<double, 2, 6> zero_depth_projection_dps = Eigen::Matrix<double, 2, 6>::Zero();
-
-    if (abs(zero_depth_point[2]) > std::numeric_limits<double>::epsilon()) {
-        zero_depth_projection = PerspectiveProjection<double>::f(zero_depth_point);
-
-        Eigen::Matrix<double, 3, 6> zero_depth_point_dps = Eigen::Matrix<double, 3, 6>::Zero();
-        zero_depth_point_dps.block<3,3>(0, 3) = Eigen::Matrix3d::Identity();
-        zero_depth_projection_dps = PerspectiveProjection<double>::df_dpt(zero_depth_point) * zero_depth_point_dps;
-    } 
-
-    //TODO: derive close form for the rest  
-    Eigen::Vector<JetT, 2> projection_J;
-    projection_J[0].a = projection[0];
-    projection_J[1].a = projection[1];
-    projection_J[0].v = projection_dps.row(0);
-    projection_J[1].v = projection_dps.row(1);
-    
-    Eigen::Vector<JetT, 2> zero_depth_projection_J;
-    zero_depth_projection_J[0].a = zero_depth_projection[0];
-    zero_depth_projection_J[1].a = zero_depth_projection[1];
-    zero_depth_projection_J[0].v = zero_depth_projection_dps.row(0);
-    zero_depth_projection_J[1].v = zero_depth_projection_dps.row(1);
-
-    const Eigen::Vector2<JetT> epipolar_vector_J = (projection_J - zero_depth_projection_J).normalized();
-    const Eigen::Vector2<JetT> epipolar_vector_tan_J(epipolar_vector_J[1], -epipolar_vector_J[0]);
-
-    const auto projection_error_J = projection_J - feature.cast<JetT>();
-
-    Eigen::Vector2<JetT> error_J;
-    error_J[0] = JetT(point_info[0]) * epipolar_vector_J.dot(projection_error_J);
-    error_J[1] = JetT(point_info[1]) * epipolar_vector_tan_J.dot(projection_error_J);
-
-    error[0] = error_J[0].a;
-    error[1] = error_J[1].a;
-    J.row(0) = error_J[0].v;
-    J.row(1) = error_J[1].v;
+    return report;
 }
 
 void EpipolarPnPSolver::GetPoseFactor(

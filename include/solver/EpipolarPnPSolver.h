@@ -31,16 +31,14 @@ public:
         Eigen::Vector<double, 6>& pose, 
         const Cofiguration& config);
     
-private:
-    // point_info - disparity info mat diagonal 
-    static inline void GetPoseFactor(
-        const Eigen::Vector3d& point,
-        const Eigen::Vector2d& point_info,
-        const Eigen::Vector2d& feature, 
-        const Eigen::Vector<double, 6>& pose,
-        Eigen::Matrix<double, 2, 6>& J,
-        Eigen::Matrix<double, 2, 1>& error);
+    static Report SolvePosePoints(
+        const std::vector<Eigen::Vector2d>& features_0, // static frame 
+        const std::vector<Eigen::Vector2d>& features_1, // transformed frame
+        std::vector<Eigen::Vector3d>& points,
+        Eigen::Vector<double, 6>& pose, 
+        const Cofiguration& config);
 
+private:
     static inline void GetPoseFactor(
         const Eigen::Vector3d& point,
         const Eigen::Vector2d& point_info,

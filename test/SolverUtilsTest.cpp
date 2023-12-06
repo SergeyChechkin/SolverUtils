@@ -627,6 +627,25 @@ TEST(SolverUtils, BASolverTest) {
     std::cout << "BASolver: "  << slvd_pose.transpose() << std::endl;
 }
 
+TEST(SolverUtils, BASolverByEpiplarTest) { 
+    std::default_random_engine gen;
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+    Eigen::Vector<double, 6> pose = {0.1, 0.2, 0.3, 0.1, 0.2, 0.3};
+    
+    size_t size = 1000;
+    std::vector<Eigen::Vector3d> map(size);
+    std::vector<Eigen::Vector2d> frame_0(size);
+    std::vector<Eigen::Vector2d> frame_1(size);
+
+    for(size_t i = 0; i < size; ++i) {
+        const Eigen::Vector3d point_3d(dist(gen), dist(gen), dist(gen) + 2);
+        const Eigen::Vector3d point_3d_t = IsometricTransformation<double>::f(pose, point_3d);
+        map[i] = point_3d;
+        frame_0[i] = PerspectiveProjection<double>::f(point_3d);
+        frame_1[i] = PerspectiveProjection<double>::f(point_3d_t);
+    }    
+}
+
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
