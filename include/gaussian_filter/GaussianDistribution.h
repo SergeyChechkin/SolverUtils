@@ -41,5 +41,15 @@ private:
     CovMatT covar_;
 };
 
+template<typename T, size_t Nm>
+std::ostream& operator << (std::ostream& output, const GaussianDistribution<T, Nm>& gd) { 
+    output << "mean:" << std::endl;
+    output << gd.mean().transpose() << std::endl;
+    output << "covariance:" << std::endl;
+    output << gd.covar() << std::endl;
+    return output;            
+}
+
+
 }
 

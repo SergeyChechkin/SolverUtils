@@ -30,7 +30,6 @@ TEST(FilterUtils, CovatianceMatrixTest) {
     std::cout << "inverse covariance matrix:" << std::endl;
     std::cout << cov_mat.GetCovarianceMatrix().inverse() << std::endl;
 */
-
     CovarianceMatrix<double, 3> cov_mat_(cov_mat.GetCovarianceMatrix());
     std::cout << std::endl;
     std::cout << cov_mat.GetCovarianceMatrix() << std::endl;
@@ -76,15 +75,23 @@ public:
 
 TEST(FilterUtils, UnscentedUpdateTest) {
     using InDistType = GaussianDistribution<double, 3>;
+    
+    Eigen::AngleAxisd aa(M_PI / 9, Eigen::Vector3d(1, 2, 3).normalized());
+    Eigen::Vector3d diag(2, 1, 3);
+    InDistType::CovMatT src_covar(diag, aa.matrix());
+    
     InDistType::MeanT src_mean(1, 2, 3);
-    InDistType::CovMatT src_covar;
     InDistType src_gss_dist(src_mean, src_covar);
+    std::cout << src_gss_dist << std::endl;
 
     using FuncType = UpdateFunction<double, 3, 3>;
-    UpdateFunction<double, 3, 3> lin_func;
+    UpdateFunction<double, 3, 3> lin_func(2);
 
     GaussianUnscentedUpdate<FuncType> guu;
     auto dst_gss_dist = guu(lin_func, src_gss_dist);
+
+    std::cout << std::endl;
+    std::cout << dst_gss_dist << std::endl;
 }
 
 int main(int argc, char **argv) {

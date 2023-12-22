@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gaussian_filter/GaussianDistribution.h"
+#include <iostream>
 
 namespace gaussian_filter {
     
@@ -13,9 +14,17 @@ public:
     using SrcPointT = Eigen::Vector<T, src_dim>;
     using DstPointT = Eigen::Vector<T, dst_dim>;
 public:
+    UpdateFunction() : scale_(1.0) {
+    }
+
+    UpdateFunction(T scale) : scale_(scale) {
+    }
+
     DstPointT operator()(const SrcPointT& src) const {
-        return src;
+        return scale_ * src;
     } 
+private:
+    T scale_ = 1;
 };
 
 template<typename FuncT>
@@ -61,8 +70,8 @@ public:
         // generate update points and weights
         Eigen::Matrix<ScalarT, dst_dim, pnts_size> points;
 
-        const auto scr_mean = src.mean();
-        const auto scr_cvr_sqrt = n_lamda_sqrt * src.covar_sqrt();
+        const SrcPointT scr_mean = src.mean();
+        const SrcCovarSqerT scr_cvr_sqrt = n_lamda_sqrt * src.covar_sqrt();
         
         const auto ut_mean = func(scr_mean);
         for(size_t i = 0; i < pnts_size; ++i) {
@@ -77,11 +86,12 @@ public:
 
         const DstMeanT cntrd_mean = (ut_mean - dst_mean);
         DstCovarT dst_covar = wc_0 * cntrd_mean * cntrd_mean.transpose();
+        
         for(size_t i = 0; i < pnts_size; ++i) {
             const DstMeanT cntrd_pnt = (points.col(i) - dst_mean);
             dst_covar += wc_i * cntrd_pnt * cntrd_pnt.transpose();
         }
-
+        
         return DstDistT(dst_mean, dst_covar);
     } 
 };
