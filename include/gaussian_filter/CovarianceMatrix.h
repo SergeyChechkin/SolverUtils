@@ -1,6 +1,10 @@
 #pragma once
 
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
+
+
+namespace gaussian_filter {
 
 template<typename T, size_t Sz>
 class CovarianceMatrix {
@@ -18,18 +22,35 @@ public:
     , rot_(rotation) {
     }
 
+    CovarianceMatrix(const MatrixType& covar) {
+        // SVD decomposition
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(covar);
+        if(Eigen::Success != eigen_solver.info()) {
+            // TODO: handle exception
+        }
+
+        dgnl_ = eigen_solver.eigenvalues();
+        rot_ = eigen_solver.eigenvectors();
+    }
+
     // returns covariance matrix
     MatrixType GetCovarianceMatrix() const {
         return rot_ * dgnl_.asDiagonal() * rot_.transpose();
     }
 
     // returns information matrix
-    // inverse diagonal only
     MatrixType GetInformationMatrix() const {
         return rot_ * dgnl_.cwiseInverse().asDiagonal() * rot_.transpose();
+    }
+
+    // returns square root of covariance matrix
+    MatrixType GetCovarianceSqrt() const {
+        return rot_ * dgnl_.cwiseSqrt().asDiagonal();
     }
 
 private:
     DiagonalType dgnl_; // principal components
     MatrixType rot_;    // rotation matrix 
 };
+
+}
