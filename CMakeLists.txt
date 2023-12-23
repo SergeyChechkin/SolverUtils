@@ -44,4 +44,5 @@ install(
   INCLUDES DESTINATION include
 )
 
-add_subdirectory(test)
+add_subdirectory(solver_test)
+add_subdirectory(filter_test)
