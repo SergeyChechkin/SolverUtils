@@ -24,7 +24,7 @@ public:
 
     CovarianceMatrix(const MatrixType& covar) {
         // SVD decomposition
-        Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigen_solver(covar);
+        Eigen::SelfAdjointEigenSolver<Eigen::Matrix<T, Sz, Sz>> eigen_solver(covar);
         if(Eigen::Success != eigen_solver.info()) {
             // TODO: handle exception
         }

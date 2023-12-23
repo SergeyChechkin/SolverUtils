@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gaussian_filter/GaussianDistribution.h"
+#include <iostream>
 
 namespace gaussian_filter {
 
@@ -17,8 +18,7 @@ private:
     using SrcPointT = FuncT::SrcPointT;
     using DstPointT = FuncT::DstPointT;
     using SrcCovarSqerT = typename SrcDistT::MatT;
-    using DstMeanT = typename SrcDistT::MeanT;
-    using DstCovarT = typename SrcDistT::MatT;
+    using DstCovarMatT = typename DstDistT::MatT;
 
     // Unscented update parameters
     //static constexpr ScalarT alpha = 1;
@@ -50,33 +50,36 @@ private:
 
 public:
     DstDistT operator()(const FuncT& func, const SrcDistT& src) const {
+        static_assert(std::is_same<typename FuncT::SrcPointT, typename SrcDistT::MeanT>::value == true, "Function input type don't match distribution type.");
+
         // generate update points and weights
         Eigen::Matrix<ScalarT, dst_dim, pnts_size> points;
 
         const SrcPointT scr_mean = src.mean();
         const SrcCovarSqerT scr_cvr_sqrt = n_lamda_sqrt * src.covar_sqrt();
         
-        const auto ut_mean = func(scr_mean);
+        const DstPointT ut_mean = func(scr_mean);
         for(size_t i = 0; i < pnts_size; ++i) {
             points.col(i) = func(GeneratePoint(scr_mean, scr_cvr_sqrt, i));
         }
 
         // approximate gausian destribution
-        DstMeanT dst_mean = wm_0 * ut_mean;
+        DstPointT dst_mean = wm_0 * ut_mean;
         for(size_t i = 0; i < pnts_size; ++i) {
             dst_mean += wm_i * points.col(i);
         }
 
-        const DstMeanT cntrd_mean = (ut_mean - dst_mean);
-        DstCovarT dst_covar = wc_0 * cntrd_mean * cntrd_mean.transpose();
+        const DstPointT cntrd_mean = (ut_mean - dst_mean);
+        DstCovarMatT dst_covar = wc_0 * cntrd_mean * cntrd_mean.transpose();
         
         for(size_t i = 0; i < pnts_size; ++i) {
-            const DstMeanT cntrd_pnt = (points.col(i) - dst_mean);
+            const DstPointT cntrd_pnt = (points.col(i) - dst_mean);
             dst_covar += wc_i * cntrd_pnt * cntrd_pnt.transpose();
         }
-        
+
         return DstDistT(dst_mean, dst_covar);
     } 
+
 };
 
 }
