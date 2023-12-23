@@ -2,6 +2,7 @@
 #include <gaussian_filter/CovarianceMatrix.h>
 #include <gaussian_filter/GaussianDistribution.h>
 #include <gaussian_filter/GaussianUnscentedUpdate.h>
+#include <unscented_update/UpdateFunction.h>
 
 #include <Eigen/Geometry>
 #include <Eigen/Eigenvalues>
@@ -10,6 +11,7 @@
 #include <iostream>
 
 using namespace gaussian_filter;
+using namespace unscented_update;
 
 TEST(FilterUtils, CovatianceMatrixTest) { 
 

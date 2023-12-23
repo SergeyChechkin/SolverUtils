@@ -1,31 +1,8 @@
 #pragma once
 
 #include "gaussian_filter/GaussianDistribution.h"
-#include <iostream>
 
 namespace gaussian_filter {
-    
-template<typename T, size_t src_Dm, size_t dst_Dm>
-class UpdateFunction {
-public:
-    static constexpr size_t src_dim = src_Dm;  // Input distrebution dimension 
-    static constexpr size_t dst_dim = dst_Dm;  // Output distrebution dimension 
-    using ScalarT = T;
-    using SrcPointT = Eigen::Vector<T, src_dim>;
-    using DstPointT = Eigen::Vector<T, dst_dim>;
-public:
-    UpdateFunction() : scale_(1.0) {
-    }
-
-    UpdateFunction(T scale) : scale_(scale) {
-    }
-
-    DstPointT operator()(const SrcPointT& src) const {
-        return scale_ * src;
-    } 
-private:
-    T scale_ = 1;
-};
 
 template<typename FuncT>
 class GaussianUnscentedUpdate {
@@ -44,17 +21,23 @@ private:
     using DstCovarT = typename SrcDistT::MatT;
 
     // Unscented update parameters
-    static constexpr ScalarT alpha = 1;
-    static constexpr ScalarT betta = 0;
+    //static constexpr ScalarT alpha = 1;
+    //static constexpr ScalarT betta = 0;
+    //static constexpr ScalarT kappa = 0;
+
+    static constexpr ScalarT alpha = 1.0e-3;
+    static constexpr ScalarT betta = 2;
     static constexpr ScalarT kappa = 0;
 
     // Precomputed parameters
     static constexpr ScalarT lamda = alpha * alpha * (src_dim + kappa) - src_dim;
     static constexpr ScalarT n_lamda = src_dim + lamda;
     static constexpr ScalarT n_lamda_sqrt = sqrt(n_lamda);
+    // first-order weights
     static constexpr ScalarT wm_0 = lamda / n_lamda; 
-    static constexpr ScalarT wc_0 = wm_0 + (1 - alpha * alpha + betta); 
     static constexpr ScalarT wm_i = 0.5 / n_lamda; 
+    // second-order weights
+    static constexpr ScalarT wc_0 = wm_0 + (1 - alpha * alpha + betta); 
     static constexpr ScalarT wc_i = wm_i; 
     
     inline SrcPointT GeneratePoint(const SrcPointT& src_mean, const SrcCovarSqerT& src_cvr_sqrt, size_t idx) const {

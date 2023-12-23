@@ -8,31 +8,33 @@
 // 3. Update function, convert source points  
 // 4. Unscented update, perform update 
 
-/*
-template<size_t Dm_N, size_t Pt_N>
-class UpdatePoints {
-public:
-    Eigen::Matrix<double, Dm_N, Pt_N> points_;
-    Eigen::Vector<double, Pt_N> weights_;
-}; 
-*/
 
 template<typename DT>
 class UpdateInput {
 public:
-    static constexpr size_t dim_size = Dm_N;// Input distrebution dimension 
-    static constexpr size_t pnt_size = 0;   // Number of generated points
-    using DistT = DT;                       // Update input destribution 
-    using PointT = Eigen::Vector<double, DT::dim_size>;
+    static constexpr size_t dim_size = DT::dim_size;    // Input distrebution dimension 
+    static constexpr size_t pnt_size = 0;               // Number of generated points
+    using DistT = DT;                        
+    using ScalarT = DT::ScalarT;
+    using PointT = DT::PointT;
 
-    PointT GetPoint(size_t idx) const {
-        return PointT::Zero();
+    inline PointT GeneratePoint(const DistT& input_dstrbtn, size_t idx) const {
     } 
 
-    double GetWeight(size_t idx) const {
-        return 1;
-    }
+    inline ScalarT GenerateWeight(const DistT& input_dstrbtn, size_t idx) const {
+    } 
 };
+
+template<typename Output_DT, typename FuncT, typename UpdateInputT>
+class UpdateOutput {
+public:
+    static constexpr size_t dim_size = DT::dim_size;    // Input distrebution dimension 
+    static constexpr size_t pnt_size = 0;               // Number of generated points
+    using DistT = DT;                        
+    using ScalarT = DT::ScalarT;
+    using PointT = DT::PointT;
+};
+
 /*
 template<size_t src_Dm_N, size_t dst_Dm_N>
 class UpdateFunction {

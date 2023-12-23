@@ -9,7 +9,7 @@ template<typename T, size_t Dm_N>
 class GaussianDistribution {
 public:
     static constexpr size_t dim_size = Dm_N;
-    using ScalatT = T;
+    using ScalarT = T;
     using MeanT = Eigen::Vector<T, dim_size>;
     using CovMatT = CovarianceMatrix<T, dim_size>;
     using MatT = typename CovMatT::MatrixType;
